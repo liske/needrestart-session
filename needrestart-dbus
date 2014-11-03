@@ -34,7 +34,6 @@ use strict;
 
 BEGIN {
     openlog(q(needrestart-dbus), 'pid', LOG_DAEMON);
-    syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
 }
 
 END {
@@ -54,10 +53,13 @@ sub DIE_handler {
 $SIG{__WARN__} = q(WARN_handler);
 $SIG{__DIE__}  = q(DIE_handler);
 
+syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
+
 package NeedRestart::DBus;
 
 use NeedRestart;
 use Net::DBus::Exporter qw(net.ibh.needrestart.system);
+use Sys::Syslog qw(:standard :macros);
 use base qw(Net::DBus::Object);
 
 sub new {
@@ -67,11 +69,15 @@ sub new {
     my $self = $class->SUPER::new($service, "/net/ibh/needrestart/system");
     bless $self, $class;
 
+    syslog(LOG_INFO, q(new instance));
+
     return $self;
 }
 
 dbus_method(q(GetImplementation), [], [[q(struct), q(string), q(string)]]);
 sub GetImplementation {
+    syslog(LOG_INFO, q(query));
+
     my $self = shift;
     my $message = shift;
 
@@ -82,5 +88,9 @@ sub GetImplementation {
 
 package main;
 
-NeedRestart::DBus->new( Net::DBus->session->export_service("net.ibh.needrestart.system") );
-Net::DBus::Reactor->main->run();
+my $bus = Net::DBus->system;
+NeedRestart::DBus->new( $bus->export_service('net.ibh.needrestart.system') );
+syslog(LOG_INFO, q(entering event loop...));
+my $reactor = Net::DBus::Reactor->main;
+$reactor->run();
+syslog(LOG_INFO, q(leaving event loop));
