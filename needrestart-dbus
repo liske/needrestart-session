@@ -27,11 +27,32 @@
 use Net::DBus;
 use Net::DBus::Service;
 use Net::DBus::Reactor;
+use Sys::Syslog qw(:standard :macros);
 
 use warnings;
 use strict;
 
+BEGIN {
+    openlog(q(needrestart-dbus), 'pid', LOG_DAEMON);
+    syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
+}
 
+END {
+    syslog(LOG_INFO, q(terminated));
+}
+
+sub WARN_handler {
+    my $signal = shift;
+    syslog(LOG_WARNING, q(%s), $signal);
+}
+
+sub DIE_handler {
+    my $signal = shift;
+    syslog(LOG_ERR, q(%s), $signal);
+}
+
+$SIG{__WARN__} = q(WARN_handler);
+$SIG{__DIE__}  = q(DIE_handler);
 
 package NeedRestart::DBus;
 
