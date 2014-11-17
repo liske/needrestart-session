@@ -76,8 +76,6 @@ sub new {
 
 dbus_method(q(GetImplementation), [], [[q(struct), q(string), q(string)]]);
 sub GetImplementation {
-    syslog(LOG_INFO, q(query));
-
     my $self = shift;
     my $message = shift;
 
