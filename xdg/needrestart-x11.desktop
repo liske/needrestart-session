@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=needrestart-x11
+Comment=Notifies of running obsolete and potential insecure binaries and libraries.
+Exec=/usr/lib/needrestart/needrestart-dbus
+Terminal=false
+Type=Application
+Categories=
