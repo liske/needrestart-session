@@ -28,12 +28,13 @@ use Net::DBus;
 use Net::DBus::Service;
 use Net::DBus::Reactor;
 use Sys::Syslog qw(:standard :macros);
+use NeedRestart;
 
 use warnings;
 use strict;
 
 BEGIN {
-    openlog(q(needrestart-dbus), 'pid', LOG_DAEMON);
+    openlog(q(needrestart-dbus-session), 'pid', LOG_DAEMON);
 }
 
 END {
@@ -55,40 +56,23 @@ $SIG{__DIE__}  = q(DIE_handler);
 
 syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
 
-package NeedRestart::DBus;
+my $bus = Net::DBus->system();
 
-use NeedRestart;
-use Net::DBus::Exporter qw(net.ibh.needrestart.session);
-use Sys::Syslog qw(:standard :macros);
-use base qw(Net::DBus::Object);
+my $service = $bus->get_service(q(net.ibh.NeedRestart.System));
+my $object  = $service->get_object(q(/net/ibh/NeedRestart/System),
+				   q(net.ibh.NeedRestart.System));
+syslog(LOG_INFO, q(C));
 
-sub new {
-    my $class = shift;
-    my $service = shift;
+sub hNotifySessions {
+    my $greeting = shift;
+    print "Received NotifySessions signal!\n";
 
-    my $self = $class->SUPER::new($service, "/net/ibh/needrestart/session");
-    bless $self, $class;
-
-    syslog(LOG_INFO, q(new instance));
-
-    return $self;
 }
 
-dbus_method(q(GetImplementation), [], [[q(struct), q(string), q(string)]]);
-sub GetImplementation {
-    my $self = shift;
-    my $message = shift;
+my $sig = $object->connect_to_signal(q(NotifySessions), \&hNotifySessions);
 
-    return [q(needrestart), $NeedRestart::VERSION];
-}
+my $reactor = Net::DBus::Reactor->main();
 
-
-
-package main;
-
-my $bus = Net::DBus->session;
-NeedRestart::DBus->new( $bus->export_service('net.ibh.needrestart.session') );
 syslog(LOG_INFO, q(entering event loop...));
-my $reactor = Net::DBus::Reactor->main;
 $reactor->run();
 syslog(LOG_INFO, q(leaving event loop));

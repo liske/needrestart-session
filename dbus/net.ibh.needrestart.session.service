@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=net.ibh.needrestart.session
-Exec=/usr/lib/needrestart/needrestart-dbus
