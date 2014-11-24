@@ -1,4 +1,0 @@
-[D-BUS Service]
-Name=net.ibh.needrestart.system
-Exec=/usr/sbin/needrestart-dbus
-User=root

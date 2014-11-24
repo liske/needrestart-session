@@ -58,7 +58,7 @@ syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
 package NeedRestart::DBus;
 
 use NeedRestart;
-use Net::DBus::Exporter qw(net.ibh.needrestart.system);
+use Net::DBus::Exporter qw(net.ibh.needrestart.session);
 use Sys::Syslog qw(:standard :macros);
 use base qw(Net::DBus::Object);
 
@@ -66,7 +66,7 @@ sub new {
     my $class = shift;
     my $service = shift;
 
-    my $self = $class->SUPER::new($service, "/net/ibh/needrestart/system");
+    my $self = $class->SUPER::new($service, "/net/ibh/needrestart/session");
     bless $self, $class;
 
     syslog(LOG_INFO, q(new instance));
@@ -86,8 +86,8 @@ sub GetImplementation {
 
 package main;
 
-my $bus = Net::DBus->system;
-NeedRestart::DBus->new( $bus->export_service('net.ibh.needrestart.system') );
+my $bus = Net::DBus->session;
+NeedRestart::DBus->new( $bus->export_service('net.ibh.needrestart.session') );
 syslog(LOG_INFO, q(entering event loop...));
 my $reactor = Net::DBus::Reactor->main;
 $reactor->run();
