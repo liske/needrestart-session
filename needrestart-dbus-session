@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 # needrestart-dbus - DBus interface for needrestart
 #
@@ -28,6 +28,7 @@ use Net::DBus;
 use Net::DBus::Service;
 use Net::DBus::Reactor;
 use Sys::Syslog qw(:standard :macros);
+use POSIX ":sys_wait_h";
 use NeedRestart;
 
 use warnings;
@@ -49,6 +50,7 @@ sub WARN_handler {
 sub DIE_handler {
     my $signal = shift;
     syslog(LOG_ERR, q(%s), $signal);
+    exit;
 }
 
 $SIG{__WARN__} = q(WARN_handler);
@@ -61,12 +63,33 @@ my $bus = Net::DBus->system();
 my $service = $bus->get_service(q(net.ibh.NeedRestart.System));
 my $object  = $service->get_object(q(/net/ibh/NeedRestart/System),
 				   q(net.ibh.NeedRestart.System));
-syslog(LOG_INFO, q(C));
+
+my $nx11pid;
+$SIG{CHLD} = sub {
+    while( (my $pid = waitpid(-1, WNOHANG)) > 0 ) {
+	$nx11pid = undef if($nx11pid == $pid);
+    }
+};
 
 sub hNotifySessions {
-    my $greeting = shift;
-    print "Received NotifySessions signal!\n";
+    if(defined($nx11pid)) {
+	syslog(LOG_INFO, q(received NotifySession signal but needrestart-x11 is already alive));
+	kill(q(USR1), $nx11pid);
+	return;
+    }
 
+    syslog(LOG_INFO, q(received NotifySession signal));
+
+    $nx11pid = fork();
+    unless(defined($nx11pid)) {
+	syslog(LOG_ERR, q(Unable to fork!));
+	return;
+    }
+
+    if($nx11pid == 0) {
+	exec(qw(needrestart-x11 -n));
+	die(q(Unable to exec '/usr/bin/needrestart-x11 -n'!));
+    }
 }
 
 my $sig = $object->connect_to_signal(q(NotifySessions), \&hNotifySessions);

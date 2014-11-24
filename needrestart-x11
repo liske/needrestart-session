@@ -44,3 +44,5 @@ while(<$fh>) {
 
 use Data::Dumper;
 print Dumper(x11_hierarchy);
+
+system('xclock');
