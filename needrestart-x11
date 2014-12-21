@@ -28,11 +28,10 @@ use warnings;
 use strict;
 
 use NeedRestart::Utils;
-use X11::WindowHierarchy;
 
-my $fh = nr_fork_pipe(0, qw(needrestart -b));
-
+# get user processes required to be restarted
 my %fnames;
+my $fh = nr_fork_pipe(0, qw(needrestart -b));
 while(<$fh>) {
     chomp;
 
@@ -41,8 +40,23 @@ while(<$fh>) {
     $fnames{$1} = split(/,/, $2);
     print "$1 => $2\n";
 }
+close($fh);
 
-use Data::Dumper;
-print Dumper(x11_hierarchy);
+# get list of pid => window mapping
+my %windows;
+$fh = nr_fork_pipe(0, qw(wmctrl -l -p));
+while(<$fh>) {
+    chomp;
 
-system('xclock');
+    next unless(/^(0x[\da-f]+) +-?\d+ +(\d+) /);
+
+    $windows{$2} = $1;
+}
+close($fh);
+
+
+# TEST: bring any affected program's window to front
+while (my($pid, $fname) = each(%fnames)) {
+    next unless(exists($windows{$pid}));
+    system(qw(wmctrl -i -a), $windows{$pid});
+}
