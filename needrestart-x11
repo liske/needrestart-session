@@ -28,35 +28,118 @@ use warnings;
 use strict;
 
 use NeedRestart::Utils;
+use Wx qw(wxDefaultPosition wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxEXPAND wxALL wxLIST_AUTOSIZE wxHORIZONTAL);
+use List::Util qw(max);
+
+my $app = Wx::SimpleApp->new;
+my $pd = Wx::ProgressDialog->new("Scanning...", "", 2, undef, wxPD_ELAPSED_TIME | wxPD_AUTO_HIDE);
+my $frame = Wx::Frame->new(undef, -1, 'Hello, world!');
 
 # get user processes required to be restarted
 my %fnames;
 my $fh = nr_fork_pipe(0, qw(needrestart -b));
+$pd->Update(1, "processes");
 while(<$fh>) {
     chomp;
 
     next unless(/^NEEDRESTART-PID: (.+)=([\d,]+)$/);
 
-    $fnames{$1} = split(/,/, $2);
-    print "$1 => $2\n";
+    @{ $fnames{$1} } = split(/,/, $2);
+    $pd->Pulse;
 }
 close($fh);
 
 # get list of pid => window mapping
+$pd->Update(2, "windows");
 my %windows;
+my %wtitles;
 $fh = nr_fork_pipe(0, qw(wmctrl -l -p));
 while(<$fh>) {
     chomp;
 
-    next unless(/^(0x[\da-f]+) +-?\d+ +(\d+) /);
+    next unless(/^(0x[\da-f]+) +-?\d+ +(\d+) +(.+)/);
 
     $windows{$2} = $1;
+    $wtitles{$2} = $3;
 }
 close($fh);
 
+# DEBUG
+$fnames{'iceweasel'} = [8639];
+# DEBUG
+
+# map $pid => [$fname, $win]
+my %alist;
+my %wlist = map {
+    my $fname = $_;
+
+    map {
+	my $p = $_;
+
+	if(grep { $_ == $p } keys %windows) {
+	    ($p, [$fname, $windows{$p}]);
+	}
+	else {
+	    $alist{$p} = $fname;
+	    ();
+	}
+    } @{$fnames{$fname}}
+} keys %fnames;
 
 # TEST: bring any affected program's window to front
-while (my($pid, $fname) = each(%fnames)) {
-    next unless(exists($windows{$pid}));
-    system(qw(wmctrl -i -a), $windows{$pid});
+#while (my($pid, $fname) = each(%fnames)) {
+#    next unless(exists($windows{$pid}));
+#    system(qw(wmctrl -i -a), $windows{$pid});
+#}
+
+my $sWindows = Wx::StaticText->new($frame, -1, q(The following of your running applications are using obsolete libraries. Double click brings the application's window to front.));
+my $lWindows = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
+$lWindows->InsertColumn(0, "Application");
+$lWindows->InsertColumn(1, "Title");
+my $pos = 0;
+while (my($pid, $data) = each(%wlist)) {
+    my ($fname, $win) = @{$data};
+
+    $lWindows->InsertStringItem($pos, $fname);
+    $lWindows->SetItem($pos++, 1, $wtitles{$pid});
 }
+$lWindows->SetColumnWidth(0, wxLIST_AUTOSIZE);
+$lWindows->SetColumnWidth(1, wxLIST_AUTOSIZE);
+
+my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:');
+my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
+$lApps->InsertColumn(0, "PID");
+$lApps->InsertColumn(1, "Application");
+$pos = 0;
+while (my($pid, $fname) = each(%alist)) {
+    $lApps->InsertStringItem($pos, $pid);
+    $lApps->SetItem($pos++, 1, $fname);
+}
+$lApps->SetColumnWidth(0, wxLIST_AUTOSIZE);
+$lApps->SetColumnWidth(1, wxLIST_AUTOSIZE);
+
+my $width = max(
+    $lApps->GetColumnWidth(0) + $lApps->GetColumnWidth(1),
+    $lWindows->GetColumnWidth(0) + $lWindows->GetColumnWidth(1),
+    );
+$width *= 1.3;
+$sApps->Wrap($width);
+$sWindows->Wrap($width);
+
+my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
+my $bRecheck = Wx::Button->new($frame, -1, 'Recheck');
+my $bClose = Wx::Button->new($frame, -1, 'Close');
+
+my $fgs = Wx::FlexGridSizer->new(3, 1, 0, 0);
+$fgs->Add($sWindows);
+$fgs->Add($lWindows, 1, wxEXPAND|wxALL);
+$fgs->Add($sApps);
+$fgs->Add($lApps, 1, wxEXPAND|wxALL);
+$bsButtons->Add($bRecheck);
+$bsButtons->Add($bClose);
+$fgs->Add($bsButtons);
+$frame->SetSizerAndFit($fgs);
+$frame->SetAutoLayout(1);
+
+$frame->Show;
+$app->MainLoop;
