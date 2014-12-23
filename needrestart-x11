@@ -33,8 +33,10 @@ use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE);
 use List::Util qw(max);
 
 my $app = Wx::SimpleApp->new;
+$app->SetAppName('needrestart-x11');
+
 my $pd = Wx::ProgressDialog->new("Scanning...", "", 2, undef, wxPD_ELAPSED_TIME | wxPD_AUTO_HIDE);
-my $frame = Wx::Frame->new(undef, -1, 'Hello, world!');
+my $frame = Wx::Frame->new(undef, -1, 'needrestart-x11');
 
 # get user processes required to be restarted
 my %fnames;
