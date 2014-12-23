@@ -28,7 +28,8 @@ use warnings;
 use strict;
 
 use NeedRestart::Utils;
-use Wx qw(wxDefaultPosition wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxEXPAND wxALL wxLIST_AUTOSIZE wxHORIZONTAL);
+use Wx qw(wxDefaultPosition wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxEXPAND wxALL wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER);
+use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE);
 use List::Util qw(max);
 
 my $app = Wx::SimpleApp->new;
@@ -65,7 +66,7 @@ while(<$fh>) {
 close($fh);
 
 # DEBUG
-$fnames{'iceweasel'} = [8639];
+$fnames{'iceweasel'} = [5095];
 # DEBUG
 
 # map $pid => [$fname, $win]
@@ -97,14 +98,17 @@ my $lWindows = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_RE
 $lWindows->InsertColumn(0, "Application");
 $lWindows->InsertColumn(1, "Title");
 my $pos = 0;
+my %wpwin;
 while (my($pid, $data) = each(%wlist)) {
     my ($fname, $win) = @{$data};
 
     $lWindows->InsertStringItem($pos, $fname);
-    $lWindows->SetItem($pos++, 1, $wtitles{$pid});
+    $lWindows->SetItem($pos, 1, $wtitles{$pid});
+    $wpwin{$pos++} = $win;
 }
 $lWindows->SetColumnWidth(0, wxLIST_AUTOSIZE);
 $lWindows->SetColumnWidth(1, wxLIST_AUTOSIZE);
+EVT_LIST_ITEM_ACTIVATED($frame, $lWindows, \&OnWinDClick);
 
 my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:');
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
@@ -128,18 +132,36 @@ $sWindows->Wrap($width);
 
 my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
 my $bRecheck = Wx::Button->new($frame, -1, 'Recheck');
+EVT_BUTTON($frame, $bRecheck, \&OnRecheck);
 my $bClose = Wx::Button->new($frame, -1, 'Close');
+EVT_BUTTON($frame, $bClose, \&OnClose);
 
 my $fgs = Wx::FlexGridSizer->new(3, 1, 0, 0);
 $fgs->Add($sWindows);
 $fgs->Add($lWindows, 1, wxEXPAND|wxALL);
 $fgs->Add($sApps);
 $fgs->Add($lApps, 1, wxEXPAND|wxALL);
-$bsButtons->Add($bRecheck);
-$bsButtons->Add($bClose);
-$fgs->Add($bsButtons);
+$bsButtons->Add($bRecheck, 1, wxALIGN_CENTER);
+$bsButtons->Add($bClose, 1, wxALIGN_CENTER);
+$fgs->Add($bsButtons, 0, wxEXPAND|wxALL);
 $frame->SetSizerAndFit($fgs);
 $frame->SetAutoLayout(1);
 
+EVT_CLOSE($frame, \&OnClose);
+
 $frame->Show;
 $app->MainLoop;
+
+# make selected window active
+sub OnWinDClick {
+    my ($frame, $event) = @_;
+    system(qw(wmctrl -i -a), $wpwin{$event->GetIndex});
+}
+
+sub OnRecheck {
+    print STDERR "recheck\n";
+}
+
+sub OnClose {
+    $app->ExitMainLoop;
+}
