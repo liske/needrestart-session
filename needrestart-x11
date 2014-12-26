@@ -31,6 +31,8 @@ use NeedRestart::Utils;
 use Wx qw(wxDefaultPosition wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxEXPAND wxALL wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxGROW wxID_CLOSE wxID_REFRESH);
 use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE EVT_SIZE);
 use List::Util qw(max);
+use Proc::ProcessTable;
+use Cwd qw(realpath);
 
 my $app = Wx::SimpleApp->new;
 $app->SetAppName('needrestart-x11');
@@ -115,14 +117,33 @@ EVT_LIST_ITEM_ACTIVATED($frame, $lWindows, \&OnWinDClick);
 my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:');
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
 $lApps->InsertColumn(0, "PID");
-$lApps->InsertColumn(1, "Application");
+$lApps->InsertColumn(1, "Session");
+$lApps->InsertColumn(2, "Application");
 $pos = 0;
+my %ptable = map {$_->pid => $_} @{ new Proc::ProcessTable(enable_ttys => 1)->table };
 while (my($pid, $fname) = each(%alist)) {
+    my $session = '?';
+    if(exists($ptable{$pid})) {
+	if($ptable{$pid}->{ttydev} ne '') {
+	    $session = realpath( $ptable{$pid}->{ttydev} );
+	}
+	elsif(open(HCGROUP, qq(/proc/$pid/cgroup))) {
+	    map {
+		chomp;
+		my ($id, $type, $value) = split(/:/);
+		$session = "#$2" if($type eq q(name=systemd) && $value =~ m@/user-(\d+).slice/session-(\d+).scope@);
+	    } <HCGROUP>;
+	    close(HCGROUP);
+	}
+    }
+
     $lApps->InsertStringItem($pos, $pid);
-    $lApps->SetItem($pos++, 1, $fname);
+    $lApps->SetItem($pos, 1, $session);
+    $lApps->SetItem($pos++, 2, $fname);
 }
 $lApps->SetColumnWidth(0, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(1, wxLIST_AUTOSIZE);
+$lApps->SetColumnWidth(2, wxLIST_AUTOSIZE);
 
 #my $width = max(
 #    $lApps->GetColumnWidth(0) + $lApps->GetColumnWidth(1),
@@ -140,7 +161,7 @@ EVT_BUTTON($frame, $bRecheck, \&OnRecheck);
 my $bClose = Wx::Button->new($frame, wxID_CLOSE);
 EVT_BUTTON($frame, $bClose, \&OnClose);
 
-my $fgs = Wx::FlexGridSizer->new(3, 1, 0, 0);
+my $fgs = Wx::FlexGridSizer->new(5, 1, 0, 0);
 $fgs->Add($sWindows);
 $fgs->Add($lWindows, 1, wxEXPAND|wxALL);
 $fgs->Add($sApps);
