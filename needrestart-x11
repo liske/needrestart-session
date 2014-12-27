@@ -28,37 +28,13 @@ use warnings;
 use strict;
 
 use NeedRestart::Utils;
-use Wx qw(wxDefaultPosition wxDefaultSize wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxALL wxTOP wxBOTTOM wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxEXPAND wxID_CLOSE wxID_REFRESH wxUSER_ATTENTION_INFO wxST_ELLIPSIZE_END);
+use Wx qw(wxDefaultPosition wxDefaultSize wxPD_ELAPSED_TIME wxLC_REPORT wxALL wxTOP wxBOTTOM wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxEXPAND wxID_CLOSE wxID_REFRESH wxUSER_ATTENTION_INFO wxST_ELLIPSIZE_END);
 use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE);
 use List::Util qw(max);
 use Proc::ProcessTable;
 use Cwd qw(realpath);
 
-my $app = Wx::SimpleApp->new;
-$app->SetAppName('needrestart-x11');
-
-my $pd = Wx::ProgressDialog->new("Scanning...", "", 2, undef, wxPD_ELAPSED_TIME | wxPD_AUTO_HIDE);
-my $frame = Wx::Frame->new(undef, -1, 'needrestart-x11');
-
-# get user processes required to be restarted
-my %fnames;
-my $fh = nr_fork_pipe(0, qw(needrestart -b));
-$pd->Update(1, "processes");
-while(<$fh>) {
-    chomp;
-
-    next unless(/^NEEDRESTART-PID: (.+)=([\d,]+)$/);
-
-    @{ $fnames{$1} } = split(/,/, $2);
-    $pd->Pulse;
-}
-close($fh);
-
-# get list of pid => window mapping
-$pd->Update(2, "windows");
-
-
-my %ptable = map {$_->pid => $_} @{ new Proc::ProcessTable(enable_ttys => 1)->table };
+# get current session
 my $csession;
 if(open(HCGROUP, qq(/proc/$$/cgroup))) {
     map {
@@ -69,6 +45,12 @@ if(open(HCGROUP, qq(/proc/$$/cgroup))) {
     close(HCGROUP);
 }
 my @plist;
+
+# prepare GUI stuff
+my $app = Wx::SimpleApp->new;
+$app->SetAppName('needrestart-x11');
+
+my $frame = Wx::Frame->new(undef, -1, 'needrestart-x11');
 
 my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [640, 480], wxLC_REPORT);
@@ -114,8 +96,27 @@ $frame->RequestUserAttention(wxUSER_ATTENTION_INFO);
 $app->MainLoop;
 
 sub RefreshAppsList {
-    @plist = ();
+    my %ptable = map {$_->pid => $_} @{ new Proc::ProcessTable(enable_ttys => 1)->table };
+    my $frProgress = Wx::ProgressDialog->new("", "", 4, undef, wxPD_ELAPSED_TIME);
 
+    # get user processes required to be restarted
+    my %fnames;
+    my $fh = nr_fork_pipe(0, qw(needrestart -b));
+    $frProgress->SetTitle(q(Scanning processes...));
+    while(<$fh>) {
+	chomp;
+
+	next unless(/^NEEDRESTART-PID: (.+)=([\d,]+)$/);
+
+	@{ $fnames{$1} } = split(/,/, $2);
+	$frProgress->Update(1, $1);
+	$frProgress->Pulse;
+    }
+    close($fh);
+
+    
+    # get list of pid => window mapping
+    $frProgress->SetTitle(q(Scanning X11 windows...));
     my %windows;
     my %wtitles;
     $fh = nr_fork_pipe(0, qw(wmctrl -l -p));
@@ -126,9 +127,13 @@ sub RefreshAppsList {
 
 	$windows{$2} = $1;
 	$wtitles{$2} = $3;
+	$frProgress->Update(2, $ptable{$2}->{fname});
+	$frProgress->Pulse;
     }
     close($fh);
 
+    $frProgress->SetTitle(q(Updating list...));
+    @plist = ();
     foreach my $fname (keys %fnames) {
 	foreach my $pid (@{$fnames{$fname}}) {
 	    my $session = '?';
@@ -165,6 +170,9 @@ sub RefreshAppsList {
 
 	    push(@plist, $data);
 	}
+
+	$frProgress->Update(3, $fname);
+	$frProgress->Pulse;
     }
 
     @plist = sort {
@@ -183,6 +191,8 @@ sub RefreshAppsList {
 	$lApps->SetItem($pos, 3, $data->{sessid});
 	$lApps->SetItem($pos++, 4, $data->{pid});
     }
+
+    $frProgress->Destroy;
 }
 
 # make selected window active
