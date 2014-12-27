@@ -182,6 +182,13 @@ sub RefreshAppsList {
 	    $a->{pid} <=> $b->{pid}
     } @plist;
 
+    if(scalar @plist == 0) {
+	my $msg = Wx::MessageDialog->new($frame, "None of your processes need to be restarted.", "Nothing found...");
+	$msg->ShowModal;
+	$msg->Destroy;
+	exit;
+    }
+
     $lApps->DeleteAllItems;
     my $pos = 0;
     foreach my $data (@plist) {
