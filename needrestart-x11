@@ -124,7 +124,7 @@ foreach my $fname (keys %fnames) {
 #EVT_LIST_ITEM_ACTIVATED($frame, $lWindows, \&OnWinDClick);
 
 my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
-my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
+my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
 $lApps->InsertColumn(0, "Application");
 $lApps->InsertColumn(1, "Window");
 $lApps->InsertColumn(2, "Session Type");
