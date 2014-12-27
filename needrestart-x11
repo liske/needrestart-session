@@ -28,8 +28,8 @@ use warnings;
 use strict;
 
 use NeedRestart::Utils;
-use Wx qw(wxDefaultPosition wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxEXPAND wxALL wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxGROW wxID_CLOSE wxID_REFRESH);
-use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE EVT_SIZE);
+use Wx qw(wxDefaultPosition wxDefaultSize wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxALL wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxEXPAND wxID_CLOSE wxID_REFRESH wxUSER_ATTENTION_INFO wxST_ELLIPSIZE_END);
+use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE);
 use List::Util qw(max);
 use Proc::ProcessTable;
 use Cwd qw(realpath);
@@ -69,9 +69,6 @@ while(<$fh>) {
 }
 close($fh);
 
-# DEBUG
-$fnames{'iceweasel'} = [5095];
-# DEBUG
 
 # map $pid => [$fname, $win]
 my %alist;
@@ -97,7 +94,7 @@ my %wlist = map {
 #    system(qw(wmctrl -i -a), $windows{$pid});
 #}
 
-my $sWindows = Wx::StaticText->new($frame, -1, q(The following of your running applications are using obsolete libraries. Double click brings the application's window to front.));
+my $sWindows = Wx::StaticText->new($frame, -1, q(The following of your running applications are using obsolete libraries. Double click brings the application's window to front.), wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
 my $lWindows = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
 $lWindows->InsertColumn(0, "Application");
 $lWindows->InsertColumn(1, "Title");
@@ -114,7 +111,7 @@ $lWindows->SetColumnWidth(0, wxLIST_AUTOSIZE);
 $lWindows->SetColumnWidth(1, wxLIST_AUTOSIZE);
 EVT_LIST_ITEM_ACTIVATED($frame, $lWindows, \&OnWinDClick);
 
-my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:');
+my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [-1,-1], wxLC_REPORT);
 $lApps->InsertColumn(0, "PID");
 $lApps->InsertColumn(1, "Session");
@@ -145,16 +142,6 @@ $lApps->SetColumnWidth(0, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(1, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(2, wxLIST_AUTOSIZE);
 
-#my $width = max(
-#    $lApps->GetColumnWidth(0) + $lApps->GetColumnWidth(1),
-#    $lWindows->GetColumnWidth(0) + $lWindows->GetColumnWidth(1),
-#    );
-#$width *= 1.3;
-#$sApps->Wrap($width);
-#$sWindows->Wrap($width);
-EVT_SIZE($sApps, \&OnSize);
-EVT_SIZE($sWindows, \&OnSize);
-
 my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
 my $bRecheck = Wx::Button->new($frame, wxID_REFRESH);
 EVT_BUTTON($frame, $bRecheck, \&OnRecheck);
@@ -162,26 +149,27 @@ my $bClose = Wx::Button->new($frame, wxID_CLOSE);
 EVT_BUTTON($frame, $bClose, \&OnClose);
 
 my $fgs = Wx::FlexGridSizer->new(5, 1, 0, 0);
-$fgs->Add($sWindows);
-$fgs->Add($lWindows, 1, wxEXPAND|wxALL);
-$fgs->Add($sApps);
-$fgs->Add($lApps, 1, wxEXPAND|wxALL);
-$bsButtons->Add($bRecheck, 1, wxALIGN_CENTER);
-$bsButtons->Add($bClose, 1, wxALIGN_CENTER);
-$fgs->Add($bsButtons, 0, wxGROW|wxALL);
+$fgs->Add($sWindows, 0, wxEXPAND);
+$fgs->Add($lWindows, 0, wxEXPAND);
+$fgs->Add($sApps, 0, wxEXPAND);
+$fgs->Add($lApps, 0, wxEXPAND);
+$bsButtons->Add($bRecheck, 0, wxALL, 4);
+$bsButtons->Add($bClose, 0, wxALL, 4);
+$fgs->Add($bsButtons, 0, wxALIGN_CENTER);
+
+$fgs->AddGrowableCol(0);
+$fgs->AddGrowableRow(3);
+$fgs->AddGrowableRow(3);
+
 $frame->SetSizerAndFit($fgs);
 $frame->SetAutoLayout(1);
+$frame->Centre();
 
 EVT_CLOSE($frame, \&OnClose);
 
 $frame->Show;
+$frame->RequestUserAttention(wxUSER_ATTENTION_INFO);
 $app->MainLoop;
-
-sub OnSize {
-    my $st = shift;
-
-    $st->Wrap($st->GetClientSize->GetWidth);
-}
 
 # make selected window active
 sub OnWinDClick {
