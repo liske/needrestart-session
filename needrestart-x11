@@ -28,7 +28,7 @@ use warnings;
 use strict;
 
 use NeedRestart::Utils;
-use Wx qw(wxDefaultPosition wxDefaultSize wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxALL wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxEXPAND wxID_CLOSE wxID_REFRESH wxUSER_ATTENTION_INFO wxST_ELLIPSIZE_END);
+use Wx qw(wxDefaultPosition wxDefaultSize wxPD_AUTO_HIDE wxPD_ELAPSED_TIME wxLC_REPORT wxALL wxTOP wxBOTTOM wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxEXPAND wxID_CLOSE wxID_REFRESH wxUSER_ATTENTION_INFO wxST_ELLIPSIZE_END);
 use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE);
 use List::Util qw(max);
 use Proc::ProcessTable;
@@ -76,7 +76,7 @@ if(open(HCGROUP, qq(/proc/$$/cgroup))) {
     map {
 	chomp;
 	my ($id, $type, $value) = split(/:/);
-	$csession = "#$2" if($type eq q(name=systemd) && $value =~ m@/user-(\d+).slice/session-(\d+).scope@);
+	$csession = $2 if($type eq q(name=systemd) && $value =~ m@/user-(\d+).slice/(session-\d+).scope@);
     } <HCGROUP>;
     close(HCGROUP);
 }
@@ -93,7 +93,7 @@ foreach my $fname (keys %fnames) {
 		map {
 		    chomp;
 		    my ($id, $type, $value) = split(/:/);
-		    $session = "#$2" if($type eq q(name=systemd) && $value =~ m@/user-(\d+).slice/session-(\d+).scope@);
+		    $session = $2 if($type eq q(name=systemd) && $value =~ m@/user-(\d+).slice/(session-\d+).scope@);
 		} <HCGROUP>;
 		close(HCGROUP);
 	    }
@@ -124,7 +124,7 @@ foreach my $fname (keys %fnames) {
 #EVT_LIST_ITEM_ACTIVATED($frame, $lWindows, \&OnWinDClick);
 
 my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
-my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
+my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [640, 480], wxLC_REPORT);
 $lApps->InsertColumn(0, "Application");
 $lApps->InsertColumn(1, "Window");
 $lApps->InsertColumn(2, "Session Type");
@@ -156,7 +156,7 @@ my $bClose = Wx::Button->new($frame, wxID_CLOSE);
 EVT_BUTTON($frame, $bClose, \&OnClose);
 
 my $fgs = Wx::FlexGridSizer->new(5, 1, 0, 0);
-$fgs->Add($sApps, 0, wxEXPAND);
+$fgs->Add($sApps, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
 $fgs->Add($lApps, 0, wxEXPAND);
 $bsButtons->Add($bRecheck, 0, wxALL, 4);
 $bsButtons->Add($bClose, 0, wxALL, 4);
