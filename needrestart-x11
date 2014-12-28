@@ -67,13 +67,10 @@ $lApps->SetColumnWidth(1, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(2, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(3, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(4, wxLIST_AUTOSIZE);
-EVT_LIST_ITEM_ACTIVATED($frame, $lApps, \&OnAppsDClick);
 
 my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
 my $bRecheck = Wx::Button->new($frame, wxID_REFRESH);
-EVT_BUTTON($frame, $bRecheck, \&OnRecheck);
 my $bClose = Wx::Button->new($frame, wxID_CLOSE);
-EVT_BUTTON($frame, $bClose, \&OnClose);
 
 my $fgs = Wx::FlexGridSizer->new(5, 1, 0, 0);
 $fgs->Add($sApps, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
@@ -89,14 +86,18 @@ $frame->SetSizerAndFit($fgs);
 $frame->SetAutoLayout(1);
 $frame->Centre();
 
+# bind event handlers
+EVT_BUTTON($frame, $bRecheck, \&OnRecheck);
+EVT_BUTTON($frame, $bClose, \&OnClose);
 EVT_CLOSE($frame, \&OnClose);
+EVT_LIST_ITEM_ACTIVATED($frame, $lApps, \&OnAppsDClick);
 
+# show main window and enter event loop
 $frame->Show;
 $frame->RequestUserAttention(wxUSER_ATTENTION_INFO);
 $app->MainLoop;
 
 sub RefreshAppsList {
-    my %ptable = map {$_->pid => $_} @{ new Proc::ProcessTable(enable_ttys => 1)->table };
     my $frProgress = Wx::ProgressDialog->new("", "", 4, undef, wxPD_ELAPSED_TIME);
 
     # get user processes required to be restarted
@@ -114,9 +115,19 @@ sub RefreshAppsList {
     }
     close($fh);
 
+    # terminate if no orphan process is found
+    if(scalar keys %fnames == 0) {
+	$frProgress->Destroy;
+
+	my $msg = Wx::MessageDialog->new($frame, "None of your processes need to be restarted.", "Nothing found...");
+	$msg->ShowModal;
+	$msg->Destroy;
+	exit;
+    }
     
     # get list of pid => window mapping
     $frProgress->SetTitle(q(Scanning X11 windows...));
+    my %ptable = map {$_->pid => $_} @{ new Proc::ProcessTable(enable_ttys => 1)->table };
     my %windows;
     my %wtitles;
     $fh = nr_fork_pipe(0, qw(wmctrl -l -p));
@@ -132,6 +143,7 @@ sub RefreshAppsList {
     }
     close($fh);
 
+    # build process list from `needrestart` and `wmctrl` outputs
     $frProgress->SetTitle(q(Updating list...));
     @plist = ();
     foreach my $fname (keys %fnames) {
@@ -175,6 +187,7 @@ sub RefreshAppsList {
 	$frProgress->Pulse;
     }
 
+    # sort processes by session, fname and pid
     @plist = sort {
 	$a->{sessty} cmp $b->{sessty} ||
 	    $a->{sessid} cmp $b->{sessid} ||
@@ -182,13 +195,7 @@ sub RefreshAppsList {
 	    $a->{pid} <=> $b->{pid}
     } @plist;
 
-    if(scalar @plist == 0) {
-	my $msg = Wx::MessageDialog->new($frame, "None of your processes need to be restarted.", "Nothing found...");
-	$msg->ShowModal;
-	$msg->Destroy;
-	exit;
-    }
-
+    # (re)fill app list control
     $lApps->DeleteAllItems;
     my $pos = 0;
     foreach my $data (@plist) {
