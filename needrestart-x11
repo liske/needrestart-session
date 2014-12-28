@@ -55,10 +55,9 @@ my $frame = Wx::Frame->new(undef, -1, 'needrestart-x11');
 my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [640, 480], wxLC_REPORT);
 $lApps->InsertColumn(0, "Application");
-$lApps->InsertColumn(1, "Window");
-$lApps->InsertColumn(2, "Session Type");
-$lApps->InsertColumn(3, "Session Id");
-$lApps->InsertColumn(4, "PID");
+$lApps->InsertColumn(1, "Session Type");
+$lApps->InsertColumn(2, "Session Id");
+$lApps->InsertColumn(3, "PID");
 
 &RefreshAppsList;
 
@@ -66,7 +65,6 @@ $lApps->SetColumnWidth(0, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(1, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(2, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(3, wxLIST_AUTOSIZE);
-$lApps->SetColumnWidth(4, wxLIST_AUTOSIZE);
 
 my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
 my $bRecheck = Wx::Button->new($frame, wxID_REFRESH);
@@ -199,11 +197,10 @@ sub RefreshAppsList {
     $lApps->DeleteAllItems;
     my $pos = 0;
     foreach my $data (@plist) {
-	$lApps->InsertStringItem($pos, $data->{fname});
-	$lApps->SetItem($pos, 1, $data->{winti}) if(exists($data->{winti}));
-	$lApps->SetItem($pos, 2, $data->{sessty});
-	$lApps->SetItem($pos, 3, $data->{sessid});
-	$lApps->SetItem($pos++, 4, $data->{pid});
+	$lApps->InsertStringItem($pos, $data->{fname} . (exists($data->{winti}) ? '*' : ''));
+	$lApps->SetItem($pos, 1, $data->{sessty});
+	$lApps->SetItem($pos, 2, $data->{sessid});
+	$lApps->SetItem($pos++, 3, $data->{pid});
     }
 
     $frProgress->Destroy;
