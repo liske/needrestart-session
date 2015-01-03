@@ -57,7 +57,7 @@ my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [640, 480], wxLC_RE
 $lApps->InsertColumn(0, "Application");
 $lApps->InsertColumn(1, "Session Type");
 $lApps->InsertColumn(2, "Session Id");
-$lApps->InsertColumn(3, "PID");
+$lApps->InsertColumn(3, "PIDs");
 
 &RefreshAppsList;
 
@@ -143,7 +143,7 @@ sub RefreshAppsList {
 
     # build process list from `needrestart` and `wmctrl` outputs
     $frProgress->SetTitle(q(Updating list...));
-    @plist = ();
+    my %plist;
     foreach my $fname (keys %fnames) {
 	foreach my $pid (@{$fnames{$fname}}) {
 	    my $session = '?';
@@ -151,7 +151,7 @@ sub RefreshAppsList {
 	    if(exists($ptable{$pid})) {
 		if($ptable{$pid}->{ttydev} ne '') {
 		    $session = realpath( $ptable{$pid}->{ttydev} );
-	    }
+		}
 		elsif(open(HCGROUP, qq(/proc/$pid/cgroup))) {
 		    map {
 			chomp;
@@ -166,31 +166,50 @@ sub RefreshAppsList {
 		}
 	    }
 
-	    my $data = {
-		fname => $fname,
-		pid => $pid,
-		sessid => $session,
-		sessty => $type,
-	    };
-
 	    if(grep { $_ == $pid } keys %windows) {
-		$data->{winid} = $windows{$pid};
-		$data->{winti} = $wtitles{$pid};
+		push(@{ $plist{$fname}->{plist} }, {
+		    fname => $fname,
+		    PIDs => [$pid],
+		    sessid => $session,
+		    sessty => $type,
+		    winid => $windows{$pid},
+		    winti => $wtitles{$pid},
+		});
 	    }
-
-	    push(@plist, $data);
+	    elsif(exists($plist{$fname}->{sessions}->{$session})) {
+		push(@{ $plist{$fname}->{sessions}->{$session}->{PIDs} }, $pid);
+	    }
+	    else {
+		$plist{$fname}->{sessions}->{$session} = {
+		    fname => $fname,
+		    PIDs => [$pid],
+		    sessid => $session,
+		    sessty => $type,
+		};
+	    }
 	}
 
 	$frProgress->Update(3, $fname);
 	$frProgress->Pulse;
     }
 
+    @plist = (
+	(map { (exists($plist{$_}->{plist}) ? @{ $plist{$_}->{plist} } : ()); } keys %plist),
+	(map {
+	    # sort PIDs ascending
+	    foreach my $sess (keys %{ $plist{$_}->{sessions} }) {
+		$plist{$_}->{sessions}->{$sess}->{PIDs} = [sort {$a <=> $b} @{ $plist{$_}->{sessions}->{$sess}->{PIDs} }];
+	    }
+	    (values %{ $plist{$_}->{sessions} });
+	 } keys %plist),
+	);
+
     # sort processes by session, fname and pid
     @plist = sort {
 	$a->{sessty} cmp $b->{sessty} ||
 	    $a->{sessid} cmp $b->{sessid} ||
 	    $a->{fname} cmp $b->{fname} ||
-	    $a->{pid} <=> $b->{pid}
+	    $a->{PIDs}->[0] <=> $b->{PIDs}->[0]
     } @plist;
 
     # (re)fill app list control
@@ -200,7 +219,7 @@ sub RefreshAppsList {
 	$lApps->InsertStringItem($pos, $data->{fname} . (exists($data->{winti}) ? '*' : ''));
 	$lApps->SetItem($pos, 1, $data->{sessty});
 	$lApps->SetItem($pos, 2, $data->{sessid});
-	$lApps->SetItem($pos++, 3, $data->{pid});
+	$lApps->SetItem($pos++, 3, join(', ', @{ $data->{PIDs} }));
     }
 
     $frProgress->Destroy;
