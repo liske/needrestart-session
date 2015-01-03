@@ -18,7 +18,10 @@ install: all
 	cp xdg/needrestart-x11.desktop "$(DESTDIR)/etc/xdg/"
 	
 	mkdir -p "$(DESTDIR)/usr/share/needrestart-x11"
-	cp res/needrestart.svg "$(DESTDIR)/usr/share/needrestart-x11/"
-	cp res/needrestart.xpm "$(DESTDIR)/usr/share/needrestart-x11/"
+	cp share/needrestart.svg "$(DESTDIR)/usr/share/needrestart-x11/"
+	cp share/needrestart.xpm "$(DESTDIR)/usr/share/needrestart-x11/"
+	
+	mkdir -p "$(DESTDIR)/usr/share/applications"
+	cp share/needrestart-x11.desktop "$(DESTDIR)/usr/share/applications/"
 
 clean:
