@@ -14,14 +14,11 @@ install: all
 	mkdir -p "$(DESTDIR)/usr/share/dbus-1/system-services"
 	cp dbus/net.ibh.NeedRestart.System.service "$(DESTDIR)/usr/share/dbus-1/system-services/"
 	
-	mkdir -p "$(DESTDIR)/etc/xdg"
-	cp xdg/needrestart-x11.desktop "$(DESTDIR)/etc/xdg/"
-	
 	mkdir -p "$(DESTDIR)/usr/share/needrestart-x11"
 	cp share/needrestart.svg "$(DESTDIR)/usr/share/needrestart-x11/"
 	cp share/needrestart.xpm "$(DESTDIR)/usr/share/needrestart-x11/"
 	
 	mkdir -p "$(DESTDIR)/usr/share/applications"
-	cp share/needrestart-x11.desktop "$(DESTDIR)/usr/share/applications/"
+	cp xdg/needrestart-x11.desktop "$(DESTDIR)/usr/share/applications/"
 
 clean:
