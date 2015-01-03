@@ -52,7 +52,7 @@ $app->SetAppName('needrestart-x11');
 
 my $frame = Wx::Frame->new(undef, -1, 'needrestart-x11');
 
-my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to logout and login:', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
+my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to re-login.', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [640, 480], wxLC_REPORT);
 $lApps->InsertColumn(0, "Application");
 $lApps->InsertColumn(1, "Session Type");
