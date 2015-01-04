@@ -79,7 +79,7 @@ $SIG{CHLD} = sub {
 
 sub hNotifySessions {
     if(defined($nx11pid)) {
-	syslog(LOG_INFO, q(received NotifySession signal but needrestart-x11 is already alive));
+	syslog(LOG_INFO, q(received NotifySession signal but needrestart-session is already alive));
 	kill(q(USR1), $nx11pid);
 	return;
     }
@@ -93,8 +93,8 @@ sub hNotifySessions {
     }
 
     if($nx11pid == 0) {
-	exec(qw(needrestart-x11 -n));
-	die(q(Unable to exec '/usr/bin/needrestart-x11 -n'!));
+	exec(qw(needrestart-session -n));
+	die(q(Unable to exec '/usr/bin/needrestart-session -n'!));
     }
 }
 

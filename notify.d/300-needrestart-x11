@@ -15,7 +15,7 @@
 #   (at your option) any later version.
 #
 
-# Use dbus-send to launch needrestart-x11 in the user's session.
+# Use dbus-send to launch needrestart-session in the user's session.
 
 DBSEND='/usr/bin/dbus-send'
 test -x "$DBSEND" || exit 1
@@ -27,7 +27,7 @@ case "$NR_SESSION" in
 	    exit 1
 	fi
 
- 	echo "[$0] notify user $NR_USERNAME by needrestart-x11" 1>&2
+ 	echo "[$0] notify user $NR_USERNAME by needrestart-session" 1>&2
 
 	exec "$DBSEND" --system --print-reply --type=method_call \
 	     --dest=net.ibh.NeedRestart.System \

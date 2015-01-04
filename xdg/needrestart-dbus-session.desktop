@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=needrestart-dbus-session
+Comment=Run needrestart-session automatic if needrestart is run by the root user.
+Icon=/usr/share/needrestart-session/needrestart.svg
+TryExec=/usr/lib/needrestart-session/needrestart-dbus-session
+Exec=/usr/lib/needrestart-session/needrestart-dbus-session
+Terminal=false
+Categories=System

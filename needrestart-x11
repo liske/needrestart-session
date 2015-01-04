@@ -28,7 +28,7 @@ use warnings;
 use strict;
 
 use constant {
-    NRX11_ICO_FILE => q(/usr/share/needrestart-x11/needrestart.xpm),
+    NRX11_ICO_FILE => q(/usr/share/needrestart-session/needrestart.xpm),
 };
 
 use NeedRestart::Utils;
@@ -52,9 +52,9 @@ my @plist;
 
 # prepare GUI stuff
 my $app = Wx::SimpleApp->new;
-$app->SetAppName('needrestart-x11');
+$app->SetAppName('needrestart-session');
 
-my $frame = Wx::Frame->new(undef, -1, 'needrestart-x11');
+my $frame = Wx::Frame->new(undef, -1, 'needrestart-session');
 $frame->SetIcon(Wx::Icon->new(NRX11_ICO_FILE, wxBITMAP_TYPE_XPM))
     if(-r NRX11_ICO_FILE);
 

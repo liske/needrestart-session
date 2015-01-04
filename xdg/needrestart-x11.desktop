@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=needrestart-x11
+Name=needrestart-session
 Comment=Check for processes of the current user need to be restarted after library upgrades.
-Icon=/usr/share/needrestart-x11/needrestart.svg
-TryExec=needrestart-x11
-Exec=needrestart-x11
+Icon=/usr/share/needrestart-session/needrestart.svg
+TryExec=needrestart-session
+Exec=needrestart-session
 Terminal=false
 Categories=System
