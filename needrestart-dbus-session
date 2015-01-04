@@ -62,6 +62,10 @@ syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
 
 my $bus = Net::DBus->system();
 
+# Net::DBUS seems to be buggy in service activation, trigger
+# service activation manually.
+$bus->get_bus_object->StartServiceByName(q(net.ibh.NeedRestart.System), 0);
+
 my $service = $bus->get_service(q(net.ibh.NeedRestart.System));
 my $object  = $service->get_object(q(/net/ibh/NeedRestart/System),
 				   q(net.ibh.NeedRestart.System));
