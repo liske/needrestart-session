@@ -32,6 +32,8 @@ use Sys::Syslog qw(:standard :macros);
 use warnings;
 use strict;
 
+$0 = q(needrestart-dbus-system);
+
 BEGIN {
     openlog(q(needrestart-dbus-system), 'pid', LOG_DAEMON);
 }

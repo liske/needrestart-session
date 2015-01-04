@@ -34,6 +34,8 @@ use NeedRestart;
 use warnings;
 use strict;
 
+$0 = q(needrestart-dbus-session);
+
 BEGIN {
     openlog(q(needrestart-dbus-session), 'pid', LOG_USER);
 }
