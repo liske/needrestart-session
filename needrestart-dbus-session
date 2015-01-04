@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# needrestart-dbus - DBus interface for needrestart
+# needrestart-x11 - DBus interface for needrestart for X11 based user sessions
 #
 # Authors:
 #   Thomas Liske <thomas@fiasko-nw.net>

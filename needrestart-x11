@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 
-# needrestart-x11 - X11 frontend for needrestart
+# needrestart-x11 - DBus interface for needrestart for X11 based user sessions
 #
 # Authors:
 #   Thomas Liske <thomas@fiasko-nw.net>
 #
 # Copyright Holder:
-#   2014 (C) Thomas Liske [http://fiasko-nw.net/~thomas/]
+#   2014 - 2015 (C) Thomas Liske [http://fiasko-nw.net/~thomas/]
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
