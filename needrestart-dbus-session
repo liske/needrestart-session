@@ -35,7 +35,7 @@ use warnings;
 use strict;
 
 BEGIN {
-    openlog(q(needrestart-dbus-session), 'pid', LOG_DAEMON);
+    openlog(q(needrestart-dbus-session), 'pid', LOG_USER);
 }
 
 END {
