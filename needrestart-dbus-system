@@ -1,6 +1,6 @@
 #!/usr/bin/perl -T
 
-# needrestart-x11 - DBus interface for needrestart for X11 based user sessions
+# needrestart-session - check for processes need to be restarted in user sessions
 #
 # Authors:
 #   Thomas Liske <thomas@fiasko-nw.net>

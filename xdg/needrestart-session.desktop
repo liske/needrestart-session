@@ -2,7 +2,7 @@
 Type=Application
 Version=1.0
 Name=needrestart-session
-Comment=Check for processes of the current user need to be restarted after library upgrades.
+Comment=Check for processes in the current user session need to be restarted after upgrades.
 Icon=/usr/share/needrestart-session/needrestart.svg
 TryExec=needrestart-session
 Exec=needrestart-session
