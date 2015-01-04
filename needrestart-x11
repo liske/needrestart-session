@@ -33,10 +33,20 @@ use constant {
 
 use NeedRestart::Utils;
 use Wx qw(wxDefaultPosition wxDefaultSize wxPD_ELAPSED_TIME wxLC_REPORT wxALL wxTOP wxBOTTOM wxLIST_AUTOSIZE wxHORIZONTAL wxALIGN_CENTER wxEXPAND wxID_CLOSE wxID_REFRESH wxUSER_ATTENTION_INFO wxST_ELLIPSIZE_END wxBITMAP_TYPE_XPM);
-use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE);
+use Wx::Event qw(EVT_BUTTON EVT_LIST_ITEM_ACTIVATED EVT_CLOSE EVT_TIMER);
 use List::Util qw(max);
 use Proc::ProcessTable;
 use Cwd qw(realpath);
+
+# Re-exec on SIGUSR1 - used by needrestart-dbus-session to trigger a
+# refresh of needrestart-session
+$SIG{USR1} = sub {
+    exec($0, @ARGV);
+};
+
+# Don't show any progressbar nor 'Nothing found...' message if there
+# was a parameter supplied (as needrestart-dbus-session does).
+my $runsilent = scalar @ARGV;
 
 # get current session
 my $csession;
@@ -53,6 +63,13 @@ my @plist;
 # prepare GUI stuff
 my $app = Wx::SimpleApp->new;
 $app->SetAppName('needrestart-session');
+
+# while running in Wx's mainloop perl won't get any signals, therefore
+# we just run a timer event every 5 seconds to make signal handling
+# deterministic
+my $timer = Wx::Timer->new( $app );
+$timer->Start( 5000 );
+EVT_TIMER($app, -1, sub { });
 
 my $frame = Wx::Frame->new(undef, -1, 'needrestart-session');
 $frame->SetIcon(Wx::Icon->new(NRX11_ICO_FILE, wxBITMAP_TYPE_XPM))
@@ -102,35 +119,39 @@ $frame->RequestUserAttention(wxUSER_ATTENTION_INFO);
 $app->MainLoop;
 
 sub RefreshAppsList {
-    my $frProgress = Wx::ProgressDialog->new("", "", 4, undef, wxPD_ELAPSED_TIME);
+    my $frProgress = ($runsilent ? undef : Wx::ProgressDialog->new("", "", 4, undef, wxPD_ELAPSED_TIME));
 
     # get user processes required to be restarted
     my %fnames;
     my $fh = nr_fork_pipe(0, qw(needrestart -b));
-    $frProgress->SetTitle(q(Scanning processes...));
+    $frProgress->SetTitle(q(Scanning processes...)) if(defined($frProgress));
     while(<$fh>) {
 	chomp;
 
 	next unless(/^NEEDRESTART-PID: (.+)=([\d,]+)$/);
 
 	@{ $fnames{$1} } = split(/,/, $2);
-	$frProgress->Update(1, $1);
-	$frProgress->Pulse;
+	if(defined($frProgress)) {
+	    $frProgress->Update(1, $1);
+	    $frProgress->Pulse;
+	}
     }
     close($fh);
 
     # terminate if no orphan process is found
     if(scalar keys %fnames == 0) {
-	$frProgress->Destroy;
+	$frProgress->Destroy if(defined($frProgress));
 
-	my $msg = Wx::MessageDialog->new($frame, "None of your processes need to be restarted.", "Nothing found...");
-	$msg->ShowModal;
-	$msg->Destroy;
+	unless($runsilent) {
+	    my $msg = Wx::MessageDialog->new($frame, "None of your processes need to be restarted.", "Nothing found...");
+	    $msg->ShowModal;
+	    $msg->Destroy;
+	}
 	exit;
     }
     
     # get list of pid => window mapping
-    $frProgress->SetTitle(q(Scanning X11 windows...));
+    $frProgress->SetTitle(q(Scanning X11 windows...)) if(defined($frProgress));
     my %ptable = map {$_->pid => $_} @{ new Proc::ProcessTable(enable_ttys => 1)->table };
     my %windows;
     my %wtitles;
@@ -142,13 +163,15 @@ sub RefreshAppsList {
 
 	$windows{$2} = $1;
 	$wtitles{$2} = $3;
-	$frProgress->Update(2, $ptable{$2}->{fname});
-	$frProgress->Pulse;
+	if(defined($frProgress)) {
+	    $frProgress->Update(2, $ptable{$2}->{fname});
+	    $frProgress->Pulse;
+	}
     }
     close($fh);
 
     # build process list from `needrestart` and `wmctrl` outputs
-    $frProgress->SetTitle(q(Updating list...));
+    $frProgress->SetTitle(q(Updating list...)) if(defined($frProgress));
     my %plist;
     foreach my $fname (keys %fnames) {
 	foreach my $pid (@{$fnames{$fname}}) {
@@ -195,8 +218,10 @@ sub RefreshAppsList {
 	    }
 	}
 
-	$frProgress->Update(3, $fname);
-	$frProgress->Pulse;
+	if(defined($frProgress)) {
+	    $frProgress->Update(3, $fname);
+	    $frProgress->Pulse;
+	}
     }
 
     @plist = (
@@ -228,7 +253,10 @@ sub RefreshAppsList {
 	$lApps->SetItem($pos++, 3, join(', ', @{ $data->{PIDs} }));
     }
 
-    $frProgress->Destroy;
+    $frProgress->Destroy if(defined($frProgress));
+
+    # Don't keep silence if user hits 'Refresh'.
+    $runsilent++;
 }
 
 # make selected window active
