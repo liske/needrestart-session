@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# needrestart-x11 - DBus interface for needrestart for X11 based user sessions
+#
+# Authors:
+#   Thomas Liske <thomas@fiasko-nw.net>
+#
+# Copyright Holder:
+#   2014 - 2015 (C) Thomas Liske [http://fiasko-nw.net/~thomas/]
+#
+# License:
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+
+# Use dbus-send to launch needrestart-x11 in the user's session.
+
+DBSEND='/usr/bin/dbus-send'
+test -x "$DBSEND" || exit 1
+
+case "$NR_SESSION" in
+    session*)
+	if [ -z "$(ps -Awwo uid,cmd -u "$NR_UID" --no-headers | grep needrestart-dbus-session)" ]; then
+ 	    echo "[$0] could not find a running needrestart-dbus-session for $NR_USERNAME" 1>&2
+	    exit 1
+	fi
+
+ 	echo "[$0] notify user $NR_USERNAME by needrestart-x11" 1>&2
+
+	exec "$DBSEND" --system --print-reply --type=method_call \
+	     --dest=net.ibh.NeedRestart.System \
+	     /net/ibh/NeedRestart/System \
+	     net.ibh.NeedRestart.System.emitNotifySessions 1>&2
+	;;
+    *)
+ 	echo "[$0] skip session '$NR_SESSION'" 1>&2
+	exit 1;
+	;;
+esac

@@ -20,5 +20,8 @@ install: all
 	
 	mkdir -p "$(DESTDIR)/usr/share/applications"
 	cp xdg/needrestart-x11.desktop "$(DESTDIR)/usr/share/applications/"
+	
+	mkdir -p "$(DESTDIR)/etc/needrestart/notify.d"
+	cp notify.d/300-needrestart-x11 "$(DESTDIR)/etc/needrestart/notify.d/"
 
 clean:
