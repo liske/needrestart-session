@@ -1,4 +1,4 @@
 [D-BUS Service]
 Name=net.ibh.NeedRestart.System
-Exec=/usr/lib/needrestart-sessionx/needrestart-dbus-system
+Exec=/usr/lib/needrestart-session/needrestart-dbus-system
 User=needrestart-dbus
