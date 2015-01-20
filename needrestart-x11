@@ -60,6 +60,9 @@ if(open(HCGROUP, qq(/proc/$$/cgroup))) {
 }
 my @plist;
 
+# probe needrestart's PolicyKit integration
+my $haspk = `pkaction --action-id net.fiasko-nw.needrestart 2> /dev/null`;
+
 # prepare GUI stuff
 my $app = Wx::SimpleApp->new;
 $app->SetAppName('needrestart-session');
@@ -93,9 +96,15 @@ my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
 my $bRecheck = Wx::Button->new($frame, wxID_REFRESH);
 my $bClose = Wx::Button->new($frame, wxID_CLOSE);
 
-my $fgs = Wx::FlexGridSizer->new(5, 1, 0, 0);
+my $sRoot = Wx::StaticText->new($frame, -1, 'To check system services you need to run needrestart as root.');
+my $bRoot = Wx::Button->new($frame, -1, '&Check services');
+$bRoot->Enable($haspk);
+
+my $fgs = Wx::FlexGridSizer->new(6, 1, 0, 0);
 $fgs->Add($sApps, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
 $fgs->Add($lApps, 0, wxEXPAND);
+$fgs->Add($sRoot, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
+$bsButtons->Add($bRoot, 0, wxALL, 4);
 $bsButtons->Add($bRecheck, 0, wxALL, 4);
 $bsButtons->Add($bClose, 0, wxALL, 4);
 $fgs->Add($bsButtons, 0, wxALIGN_CENTER);
@@ -108,6 +117,7 @@ $frame->SetAutoLayout(1);
 $frame->Centre();
 
 # bind event handlers
+EVT_BUTTON($frame, $bRoot, \&OnRunAsRoot);
 EVT_BUTTON($frame, $bRecheck, \&OnRecheck);
 EVT_BUTTON($frame, $bClose, \&OnClose);
 EVT_CLOSE($frame, \&OnClose);
@@ -264,6 +274,23 @@ sub OnAppsDClick {
     my ($frame, $event) = @_;
 
     system(qw(wmctrl -i -a), $plist[$event->GetIndex]->{winid}) if(exists($plist[$event->GetIndex]->{winid}));
+}
+
+sub OnRunAsRoot {
+    my %frontends = (
+	kde => [qw(QtCore4 QtGui4)],
+    );
+    my $desktop = lc($ENV{XDG_CURRENT_DESKTOP});
+    my $frontend = q(gnome);
+
+    # use desktop specific frontend if available
+    if(defined($desktop) && exists($frontends{$desktop})) {
+	my $e = map { eval "require $_;"; if($@) {(1);} else {()}; } @{$frontends{$desktop}};
+	$frontend = $desktop unless($e);
+    }
+
+    # run needrestart as root using PolicyKit and overwritten debconf frontend
+    system(qw(pkexec /usr/sbin/needrestart -f), $frontend);
 }
 
 sub OnRecheck {
