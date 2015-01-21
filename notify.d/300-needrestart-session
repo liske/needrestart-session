@@ -29,10 +29,18 @@ case "$NR_SESSION" in
 
  	echo "[$0] notify user $NR_USERNAME by needrestart-session" 1>&2
 
-	exec "$DBSEND" --system --print-reply --type=method_call \
-	     --dest=net.ibh.NeedRestart.System \
-	     /net/ibh/NeedRestart/System \
-	     net.ibh.NeedRestart.System.emitNotifySessions 1>&2
+	# dbus-send fails if fd 1 is n/a
+	if [ -e "/proc/$$/fd/2" ]; then
+	    exec "$DBSEND" --system --print-reply --type=method_call \
+		 --dest=net.ibh.NeedRestart.System \
+		 /net/ibh/NeedRestart/System \
+		 net.ibh.NeedRestart.System.emitNotifySessions 1>&2
+	else
+	    exec "$DBSEND" --system --print-reply --type=method_call \
+		 --dest=net.ibh.NeedRestart.System \
+		 /net/ibh/NeedRestart/System \
+		 net.ibh.NeedRestart.System.emitNotifySessions 1> /dev/null
+	fi
 	;;
     *)
  	echo "[$0] skip session '$NR_SESSION'" 1>&2
