@@ -72,13 +72,13 @@ $app->SetAppName('needrestart-session');
 # deterministic
 my $timer = Wx::Timer->new( $app );
 $timer->Start( 5000 );
-EVT_TIMER($app, -1, sub { });
+EVT_TIMER($app, -1, sub { 1; });
 
 my $frame = Wx::Frame->new(undef, -1, 'needrestart-session');
 $frame->SetIcon(Wx::Icon->new(NRX11_ICO_FILE, wxBITMAP_TYPE_XPM))
     if(-r NRX11_ICO_FILE);
 
-my $sApps = Wx::StaticText->new($frame, -1, 'Some background processes need to be restarted manually. You might need to re-login.', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
+my $sApps = Wx::StaticText->new($frame, -1, 'Some of your processes need to be restarted. You might need to re-login.', wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
 my $lApps = Wx::ListCtrl->new($frame, -1, wxDefaultPosition, [640, 480], wxLC_REPORT);
 $lApps->InsertColumn(0, "Application");
 $lApps->InsertColumn(1, "Session Type");
@@ -96,14 +96,15 @@ my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
 my $bRecheck = Wx::Button->new($frame, wxID_REFRESH);
 my $bClose = Wx::Button->new($frame, wxID_CLOSE);
 
-my $sRoot = Wx::StaticText->new($frame, -1, 'To check system services you need to run needrestart as root.');
-my $bRoot = Wx::Button->new($frame, -1, '&Check services');
+my $sDClick = Wx::StaticText->new($frame, -1, '*) Double click to bring application window to front.');
+
+my $bRoot = Wx::Button->new($frame, -1, '&System Services');
 $bRoot->Enable($haspk);
 
 my $fgs = Wx::FlexGridSizer->new(6, 1, 0, 0);
 $fgs->Add($sApps, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
 $fgs->Add($lApps, 0, wxEXPAND);
-$fgs->Add($sRoot, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
+$fgs->Add($sDClick, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
 $bsButtons->Add($bRoot, 0, wxALL, 4);
 $bsButtons->Add($bRecheck, 0, wxALL, 4);
 $bsButtons->Add($bClose, 0, wxALL, 4);
@@ -273,6 +274,8 @@ sub RefreshAppsList {
 sub OnAppsDClick {
     my ($frame, $event) = @_;
 
+    my $pid = fork();
+    
     system(qw(wmctrl -i -a), $plist[$event->GetIndex]->{winid}) if(exists($plist[$event->GetIndex]->{winid}));
 }
 
@@ -290,7 +293,11 @@ sub OnRunAsRoot {
     }
 
     # run needrestart as root using PolicyKit and overwritten debconf frontend
-    system(qw(pkexec /usr/sbin/needrestart -f), $frontend);
+    my $pid = fork();
+    unless($pid) {
+	exec(qw(pkexec /usr/sbin/needrestart -f), $frontend);
+	die;
+    }
 }
 
 sub OnRecheck {
