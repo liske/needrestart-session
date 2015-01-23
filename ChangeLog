@@ -1,3 +1,11 @@
+needrestart-session (0.2) unstable; urgency=low
+
+  * Add manual page.
+  * Add PolicyKit support to launch needrestart as non-root.
+  * Many small improvements and bug-fixes.
+
+ -- Thomas Liske <thomas@fiasko-nw.net>  Fri, 23 Jan 2015 02:21:43 +0100
+
 needrestart-session (0.1) unstable; urgency=low
 
   * Initial release.
