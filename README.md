@@ -20,6 +20,6 @@ Install
 
 and non-perl packages:
 * D-Bus
-* needrestart
+* needrestart (>= 2.0)
 * PolicyKit
 * Wmctrl
