@@ -72,7 +72,7 @@ $app->SetAppName('needrestart-session');
 # deterministic
 my $timer = Wx::Timer->new( $app );
 $timer->Start( 5000 );
-EVT_TIMER($timer, -1, sub { 1; });
+EVT_TIMER($app, -1, sub { 1; });
 
 my $frame = Wx::Frame->new(undef, -1, 'needrestart-session');
 $frame->SetIcon(Wx::Icon->new(NRX11_ICO_FILE, wxBITMAP_TYPE_XPM))
@@ -93,13 +93,12 @@ $lApps->SetColumnWidth(2, wxLIST_AUTOSIZE);
 $lApps->SetColumnWidth(3, wxLIST_AUTOSIZE);
 
 my $bsButtons = Wx::BoxSizer->new(wxHORIZONTAL);
+my $bRoot = Wx::Button->new($frame, -1, '&System Services');
+$bRoot->Enable($haspk);
 my $bRecheck = Wx::Button->new($frame, wxID_REFRESH);
 my $bClose = Wx::Button->new($frame, wxID_CLOSE);
 
 my $sDClick = Wx::StaticText->new($frame, -1, '*) Double click to bring application window to front.');
-
-my $bRoot = Wx::Button->new($frame, -1, '&System Services');
-$bRoot->Enable($haspk);
 
 my $fgs = Wx::FlexGridSizer->new(6, 1, 0, 0);
 $fgs->Add($sApps, 0, wxEXPAND | wxTOP | wxBOTTOM, 4);
@@ -126,7 +125,6 @@ EVT_LIST_ITEM_ACTIVATED($frame, $lApps, \&OnAppsDClick);
 
 # show main window and enter event loop
 $frame->Show;
-$frame->RequestUserAttention(wxUSER_ATTENTION_INFO);
 $app->MainLoop;
 
 sub RefreshAppsList {
