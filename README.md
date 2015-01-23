@@ -17,3 +17,9 @@ Install
 * Net::DBUS
 * Proc::ProcessTable
 * Wx
+
+and non-perl packages:
+* D-Bus
+* needrestart
+* PolicyKit
+* Wmctrl
