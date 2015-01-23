@@ -72,7 +72,7 @@ $app->SetAppName('needrestart-session');
 # deterministic
 my $timer = Wx::Timer->new( $app );
 $timer->Start( 5000 );
-EVT_TIMER($app, -1, sub { 1; });
+EVT_TIMER($timer, -1, sub { 1; });
 
 my $frame = Wx::Frame->new(undef, -1, 'needrestart-session');
 $frame->SetIcon(Wx::Icon->new(NRX11_ICO_FILE, wxBITMAP_TYPE_XPM))
@@ -275,7 +275,7 @@ sub OnAppsDClick {
     my ($frame, $event) = @_;
 
     my $pid = fork();
-    
+
     system(qw(wmctrl -i -a), $plist[$event->GetIndex]->{winid}) if(exists($plist[$event->GetIndex]->{winid}));
 }
 
