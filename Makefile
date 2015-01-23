@@ -21,6 +21,7 @@ install: all
 	
 	mkdir -p "$(DESTDIR)/usr/share/applications" "$(DESTDIR)/etc/xdg/autostart"
 	cp xdg/needrestart-session.desktop "$(DESTDIR)/usr/share/applications/"
+	cp xdg/needrestart.desktop "$(DESTDIR)/usr/share/applications/"
 	cp xdg/needrestart-dbus-session.desktop "$(DESTDIR)/etc/xdg/autostart/"
 	
 	mkdir -p "$(DESTDIR)/etc/needrestart/notify.d"
