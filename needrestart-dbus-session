@@ -58,7 +58,7 @@ sub DIE_handler {
 $SIG{__WARN__} = q(WARN_handler);
 $SIG{__DIE__}  = q(DIE_handler);
 
-syslog(LOG_INFO, q(needrestart-dbus %s launched), $NeedRestart::VERSION);
+syslog(LOG_INFO, q(%s %s launched), $0, $NeedRestart::VERSION);
 
 my $bus = Net::DBus->system();
 
