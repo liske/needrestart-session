@@ -4,8 +4,9 @@ needrestart-session
 About
 -----
 
-*needrestart-session* implements a DBus interface for notification of
- user sessions about obsolete user processes after system upgrades.
+*needrestart* checks which processes need to be restarted after library
+upgrades. *needrestart-session* implements a notification of user
+sessions about their obsolete processes after system upgrades.
 
 
 Install
