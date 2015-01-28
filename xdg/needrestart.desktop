@@ -7,4 +7,6 @@ Icon=/usr/share/needrestart-session/needrestart.svg
 TryExec=/usr/sbin/needrestart
 Exec=/usr/bin/pkexec /usr/sbin/needrestart -f gnome
 Terminal=false
-Categories=System
+Categories=System;
+Keywords=system;upgrades;packages;services;security;
+X-Desktop-File-Install-Version=0.22
