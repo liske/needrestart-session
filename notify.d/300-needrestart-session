@@ -23,11 +23,11 @@ test -x "$DBSEND" || exit 1
 case "$NR_SESSION" in
     session*)
 	if [ -z "$(ps -Awwo uid,cmd -u "$NR_UID" --no-headers | grep needrestart-dbus-session)" ]; then
- 	    echo "[$0] could not find a running needrestart-dbus-session for $NR_USERNAME" 1>&2
+	    echo "[$0] could not find a running needrestart-dbus-session for $NR_USERNAME" 1>&2
 	    exit 1
 	fi
 
- 	echo "[$0] notify user $NR_USERNAME by needrestart-session" 1>&2
+	echo "[$0] notify user $NR_USERNAME by needrestart-session" 1>&2
 
 	# dbus-send fails if fd 1 is n/a
 	if [ -e "/proc/$$/fd/2" ]; then
@@ -43,7 +43,7 @@ case "$NR_SESSION" in
 	fi
 	;;
     *)
- 	echo "[$0] skip session '$NR_SESSION'" 1>&2
+	echo "[$0] skip session '$NR_SESSION'" 1>&2
 	exit 1;
 	;;
 esac
