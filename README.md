@@ -24,3 +24,5 @@ and non-perl packages:
 * needrestart (>= 2.0)
 * PolicyKit
 * Wmctrl
+* grep
+* procps
