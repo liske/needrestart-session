@@ -1,5 +1,12 @@
 needrestart-session (0.3) unstable; urgency=low
 
+  * Use absolute path to execute needrestart since it is not
+    in the search path by default.
+
+ -- Thomas Liske <thomas@fiasko-nw.net>  Wed, 28 Jan 2015 23:24:14 +0100
+
+needrestart-session (0.3) unstable; urgency=low
+
   * Lintian fixes:
     - fix spelling error in man-page
     - fix .desktop syntax and add Keywords

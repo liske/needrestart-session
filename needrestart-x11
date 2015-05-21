@@ -132,7 +132,7 @@ sub RefreshAppsList {
 
     # get user processes required to be restarted
     my %fnames;
-    my $fh = nr_fork_pipe(0, qw(needrestart -b));
+    my $fh = nr_fork_pipe(0, qw(/usr/sbin/needrestart -b));
     $frProgress->SetTitle(q(Scanning processes...)) if(defined($frProgress));
     while(<$fh>) {
 	chomp;
